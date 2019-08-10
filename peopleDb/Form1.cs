@@ -1,7 +1,9 @@
 ﻿namespace PeopleDatabase
 {
     using System;
+    using System.Collections.Generic;
     using System.Data;
+    using System.Linq;
     using System.Windows.Forms;
     using PeopleDatabase.Controllers;
     using PeopleDatabase.People;
@@ -73,17 +75,52 @@
 
         private void UpdateBtn_Click(object sender, EventArgs e)
         {
+            var dataTable = controller.Get();
+            var people = GetPeopleFromDt(dataTable);
 
+            var personToEdit = people.FirstOrDefault(x => x.FirstName == firstNameField.Text);
+            personToEdit.FirstName = firstNameField.Text;
+            personToEdit.LastName = lastNameField.Text;
+            personToEdit.Age = int.Parse(ageField.Text);
+
+            bool success = controller.Update(personToEdit);
+            if (success)
+            {
+                MessageBox.Show("Person has been updated successfully.");
+                //refresh datagrid
+                dataTable = controller.Get();
+                dataGrid.DataSource = dataTable;
+                ClearFields(); 
+            }
+            else
+            {
+                MessageBox.Show("Failed to update person.Try again...");
+            }
         }
 
         private void DeleteBtn_Click(object sender, EventArgs e)
         {
+            var dataTable = controller.Get();
+            var people = GetPeopleFromDt(dataTable);
 
+            var personToDelete = people.FirstOrDefault(x => x.FirstName == firstNameField.Text);
+            bool success = controller.Delete(personToDelete);
+            if (success)
+            {
+                MessageBox.Show("Successfully deleted!");
+                dataTable = controller.Get();
+                dataGrid.DataSource = dataTable;
+                ClearFields();
+            }
+            else
+            {
+                MessageBox.Show("Failed to delete person. Try again...");
+            }
         }
 
         private void ClearBtn_Click(object sender, EventArgs e)
         {
-
+            ClearFields();
         }
 
         private void PictureBox1_Click(object sender, EventArgs e)
@@ -100,7 +137,26 @@
 
         private void DataGrid_RowHeaderMouseClick(object sender, DataGridViewCellMouseEventArgs e)
         {
+            int rowIndex = e.RowIndex;
 
+            firstNameField.Text = dataGrid.Rows[rowIndex].Cells[1].Value.ToString();
+            lastNameField.Text = dataGrid.Rows[rowIndex].Cells[2].Value.ToString();
+            ageField.Text = dataGrid.Rows[rowIndex].Cells[3].Value.ToString();
+        }
+
+        private List<Person> GetPeopleFromDt(DataTable dt)
+        {
+
+            var convertedList = (from rw in dt.AsEnumerable()
+                                 select new Person()
+                                 {
+                                     Id = Convert.ToInt32(rw["PersonId"]),
+                                     FirstName = Convert.ToString(rw["firstName"]),
+                                     LastName = Convert.ToString(rw["lastName"]),
+                                     Age = Convert.ToInt32(rw["age"])
+                                 }).ToList();
+
+            return convertedList;
         }
     }
 }

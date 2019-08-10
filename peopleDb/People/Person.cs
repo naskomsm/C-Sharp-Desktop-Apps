@@ -9,7 +9,7 @@
         private string lastName;
         private int age;
 
-        public int Id { get; private set; }
+        public int Id { get; set; }
 
         public string FirstName
         {
